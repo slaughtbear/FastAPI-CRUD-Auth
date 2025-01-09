@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Path, Query
 from src.models.albums import Album, AlbumUpdate, AlbumCreate, albums_list
-from typing import List, Union
+from typing import List, Dict, Union
 
 
 albums_router = APIRouter()
@@ -51,11 +51,12 @@ async def update_album(id: int, album: AlbumUpdate) -> Album:
 
 
 @albums_router.delete("/{id}", tags=["Albums"])
-async def delete_album(id: int = Path(gt=0)):
+async def delete_album(id: int = Path(gt=0)) -> Dict:
     album = search_album(id)
     if album is None:
         raise HTTPException(status_code=404, detail="Album no encontrado")
     albums_list.remove(album)
+    return {"message": "Album eliminado"}
     
 
 def search_album(id: int) -> Union[Album, None]:
