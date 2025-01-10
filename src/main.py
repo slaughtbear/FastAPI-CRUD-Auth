@@ -8,5 +8,5 @@ app = FastAPI()
 async def main():
     return {"message": "Hello World"}
 
-app.include_router(albums_router, prefix="/albums")
-app.include_router(users_router, prefix="/users")
+app.include_router(albums_router, prefix="/albums", tags=["Albums"])
+app.include_router(users_router, prefix="/users", tags=["Users"])
