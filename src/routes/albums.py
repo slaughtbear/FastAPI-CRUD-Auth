@@ -1,17 +1,14 @@
 from fastapi import APIRouter, HTTPException, Path, Query, Depends
 from src.models.albums import Album, AlbumUpdate, AlbumCreate, albums_list
-from src.dependencies.id_param import IdParam
-from typing import List, Dict, Union, Annotated
+from src.dependencies.albums import IdParam, QueryParam
+from typing import List, Dict, Union
 
 
 albums_router = APIRouter()
 
 
-QUERY_SEARCH = Annotated[str, Query(min_length=3, max_length=64)]
-
-
-def search_album(id_param: IdParam = Depends()) -> Union[Album, None]:
-    return next((album for album in albums_list if album.id == id_param), None)
+async def search_album(id: IdParam) -> Union[Album, None]:
+    return next((album for album in albums_list if album.id == id), None)
 
 
 @albums_router.get("/", response_model=List[Album])
@@ -20,33 +17,33 @@ async def get_albums() -> List[Album]:
 
 
 @albums_router.get("/{id}", response_model=Album)
-async def get_album(id: int) -> Album:
-    album = search_album(id)
+async def get_album(id: IdParam) -> Album:
+    album = await search_album(id)
     if album is None:
         raise HTTPException(status_code=404, detail="Album no encontrado")
     return album
 
 
 @albums_router.get("/genre/", response_model=List[Album])
-async def get_albums_by_genre(search: QUERY_SEARCH) -> List[Album]:
+async def get_albums_by_genre(search: QueryParam) -> List[Album]:
     return [album for album in albums_list if album.genre.lower() == search.lower()]
 
 
 @albums_router.get("/artist/", response_model=List[Album])
-async def get_albums_by_artist(search: QUERY_SEARCH) -> List[Album]:
+async def get_albums_by_artist(search: QueryParam) -> List[Album]:
     return [album for album in albums_list if album.artist.lower() == search.lower()]
 
 
 @albums_router.post("/", response_model=Album, status_code=201)
 async def create_album(album: AlbumCreate) -> Album:
-    if search_album(album.id):
+    if await search_album(album.id):
         raise HTTPException(status_code=400, detail="El album ya existe")
     albums_list.append(album)
     return album
 
 
-@albums_router.put("/{id}")
-async def update_album(id: int, album: AlbumUpdate) -> Album:
+@albums_router.put("/{id}", response_model=Album)
+async def update_album(id: IdParam, album: AlbumUpdate) -> Album:
     for index, item in enumerate(albums_list):
         if item.id == id:
             albums_list[index].title = album.title
@@ -59,8 +56,8 @@ async def update_album(id: int, album: AlbumUpdate) -> Album:
 
 
 @albums_router.delete("/{id}")
-async def delete_album(id: int = Path(gt=0)) -> Dict:
-    album = search_album(id)
+async def delete_album(id: IdParam) -> Dict:
+    album = await search_album(id)
     if album is None:
         raise HTTPException(status_code=404, detail="Album no encontrado")
     albums_list.remove(album)
