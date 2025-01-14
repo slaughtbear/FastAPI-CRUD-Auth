@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Path, Query, Depends
+from fastapi import APIRouter, HTTPException
 from src.models.albums import Album, AlbumUpdate, AlbumCreate, albums_list
 from src.dependencies.albums import IdParam, QueryParam
+from src.database.database import get_all_albums
 from typing import List, Dict, Union
 
 
@@ -13,7 +14,8 @@ async def search_album(id: IdParam) -> Union[Album, None]:
 
 @albums_router.get("/", response_model=List[Album])
 async def get_albums() -> List[Album]:
-    return albums_list
+    albums = await get_all_albums()
+    return albums
 
 
 @albums_router.get("/{id}", response_model=Album)
